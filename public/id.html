@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ .Title }} | Basket</title>
+</head>
+<body>
+  <h1>{{ .Title }}</h1>
+  <p>{{ .Description }}</p>
+  <p id="status">{{ if .Active }}open{{ else }} closed {{ end }}</p>
+  <p id="count">{{ .Count }}</p>
+  {{ if .Active }}
+  <form id="form">
+    <span id="newVarStatus"></span>
+    <input type="text" id="newVar">
+    <button type="submit">
+      throw
+    </button>
+  </form>
+  {{ end }}
+  {{ if .IsOwner }}
+  <span>End it</span>
+  <button id="end">end</button>
+  {{ end }}
+  <p id="result">{{ .Result }}</p>
+  <script>
+    window.onload = function () {
+      var conn
+      var status = document.getElementById("status")
+      var count = document.getElementById("count")
+      var result = document.getElementById("result")
+      document.getElementById("form").onsubmit = async function (e) {
+        e.preventDefault()
+
+        var varNew = document.getElementById("newVar")
+        let response = await fetch(`/api/baskets${document.location.pathname}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8"
+          },
+          body: JSON.stringify({
+            value: varNew.value
+          })
+        }
+        )
+        if (response.ok) {
+          document.getElementById("newVarStatus").innerText = "Ok!"
+        } else {
+          document.getElementById("newVarStatus").innerText = "Error!"
+          console.log(response.status);
+        }
+      }
+
+      var endBtn = document.getElementById("end")
+      endBtn.onclick = async function () {
+        let response = await fetch(`/api/baskets${document.location.pathname}/close`, {
+          method: "POST",
+        })
+        if (response.ok) {
+          console.log("this basket has been successfully closed");
+        } else {
+          console.log(response.status);
+        }
+      }
+
+
+      function setCount(value) {
+        count.innerText = value
+      }
+
+      function setResult(value) {
+        result.innerText = value
+        status.innerText = "Closed"
+        conn.close(1000)
+      }
+
+      if (window["WebSocket"]) {
+        conn = new WebSocket("ws://" + document.location.host + "/ws" + document.location.pathname)
+        conn.onclose = function (evt) {
+          // status.innerText = "Closed"
+          console.log("ws closed");
+        }
+        conn.onmessage = function (evt) {
+          var message = evt.data
+          var action = message.charAt(0)
+          switch (action) {
+            case "+":
+              setCount(message.substring(1))
+              break
+            case "=":
+              setResult(message.substring(1))
+              break
+            default:
+              console.log("wrong action");
+          }
+        }
+      } else {
+        alert("Your browser doesn't support websockets")
+      }
+    }
+  </script>
+</body>
+</html>

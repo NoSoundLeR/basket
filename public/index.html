@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create | Basket</title>
+</head>
+<body>
+  <h1>Create</h1>
+  <form id="form">
+    <label for="title">Title</label>
+    <input type="text" id="title">
+    <label for="description">Description</label>
+    <input type="text" id="description">
+    <label for="value">Value</label>
+    <input type="text" id="value">
+    <button type="submit">create</button>
+  </form>
+  <script>
+    window.onload = function () {
+      var form = document.getElementById("form")
+      var title = document.getElementById("title")
+      var description = document.getElementById("description")
+      var value = document.getElementById("value")
+      form.onsubmit = async function (e) {
+        e.preventDefault()
+        var response = await fetch("/api/baskets", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+          },
+          body: JSON.stringify({
+            title: title.value,
+            description: description.value,
+            value: value.value,
+          })
+        })
+        if (response.ok) {
+          let data = await response.json()
+          window.location.href = `${data.id}`
+        } else {
+          console.log("wrong data");
+        }
+      }
+    }
+  </script>
+</body>
+</html>
