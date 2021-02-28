@@ -21,14 +21,14 @@ type Creator interface {
 
 // Baskets ...
 type Baskets struct {
-	Baskets []Basket
+	Baskets []*Basket
 }
 
 // GetBasket ...
 func (bs *Baskets) GetBasket(id string) (*Basket, error) {
 	for _, v := range bs.Baskets {
 		if v.ID.String() == id {
-			return &v, nil
+			return v, nil
 		}
 	}
 	return nil, errors.New("could not find element with this ID")
@@ -36,7 +36,7 @@ func (bs *Baskets) GetBasket(id string) (*Basket, error) {
 
 // AddBasket ...
 func (bs *Baskets) AddBasket(b Basket) {
-	bs.Baskets = append(bs.Baskets, b)
+	bs.Baskets = append(bs.Baskets, &b)
 }
 
 // RemoveBasket ...
@@ -57,15 +57,22 @@ func (bs *Baskets) RemoveBasket(id string) {
 
 // Basket ...
 type Basket struct {
-	ID          uuid.UUID
-	Secret      string
-	Active      bool
-	Title       string
-	Description string
-	CreatedAt   int64
-	ClosedAt    int64
-	Vars        map[string]string
-	Result      string
+	ID     uuid.UUID
+	Secret string
+
+	// ProtectionLevel=0 - none
+	// ProtectionLevel=1 - ip
+	// ProtectionLevel=2 - cookie
+	// ProtectionLevel=3 - ip + cookie
+	ProtectionLevel int
+	Active          bool
+	Title           string
+	Description     string
+	CreatedAt       int64
+	ClosedAt        int64
+	Vars            map[string]string
+	VarsZero        []string
+	Result          string
 }
 
 const symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -81,36 +88,57 @@ func randomString() string {
 }
 
 // NewBasket ...
-func NewBasket(ip string, title string, description string, v string) (*Basket, error) {
+func NewBasket(ip string, protectionLevel int, title string, description string, v string) (*Basket, error) {
 	if err := checkLength(v); err != nil {
 		return nil, err
 	}
+	if err := checkProtectionLevel(protectionLevel); err != nil {
+		return nil, err
+	}
+
+	s := make([]string, 0, 2)
+	s = append(s, v)
 	return &Basket{
-		ID:          uuid.New(),
-		Secret:      randomString(),
-		Title:       title,
-		Description: description,
-		CreatedAt:   time.Now().Unix(),
-		ClosedAt:    0,
-		Active:      true,
-		Vars:        map[string]string{ip: v},
-		Result:      "",
+		ID:              uuid.New(),
+		Secret:          randomString(),
+		ProtectionLevel: protectionLevel,
+		Active:          true,
+		Title:           title,
+		Description:     description,
+		CreatedAt:       time.Now().Unix(),
+		ClosedAt:        0,
+		Vars:            map[string]string{ip: v},
+		VarsZero:        s,
+		Result:          "",
 	}, nil
 }
 
 // Add ...
 func (b *Basket) Add(ip string, v string) bool {
 	if b.Active {
-		b.Vars[ip] = v
+		if b.ProtectionLevel == 0 {
+			b.VarsZero = append(b.VarsZero, v)
+		} else {
+			b.Vars[ip] = v
+		}
 		return true
 	}
 	return false
 }
 
+// GetSize ...
+func (b *Basket) GetSize() int {
+	if b.ProtectionLevel == 0 {
+		return len(b.VarsZero)
+	}
+	return len(b.Vars)
+}
+
 // getRandom ...
 func (b *Basket) getRandom() (string, error) {
-	if len(b.Vars) <= 1 {
-		return "", errors.New("not enough vars")
+	rand.Seed(time.Now().Unix())
+	if b.ProtectionLevel == 0 {
+		return b.VarsZero[rand.Intn(len(b.VarsZero))], nil
 	}
 	// accessing random elements of maps is weird
 	// so we are making a slice of values
@@ -120,8 +148,8 @@ func (b *Basket) getRandom() (string, error) {
 		buf[i] = value
 		i++
 	}
-	rand.Seed(time.Now().Unix())
 	return buf[rand.Intn(len(buf))], nil
+
 }
 
 // Close ...
@@ -141,6 +169,13 @@ const maxLen = 1024
 func checkLength(s string) error {
 	if len(s) > maxLen {
 		return fmt.Errorf("length can't be more than %d", maxLen)
+	}
+	return nil
+}
+
+func checkProtectionLevel(l int) error {
+	if l < 0 || l > 3 {
+		return fmt.Errorf("invalid protection level")
 	}
 	return nil
 }

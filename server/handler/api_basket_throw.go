@@ -30,14 +30,14 @@ func APIBasketThrow(h *hub.Hub, b basket.Getter) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		prevLen := len(basket.Vars)
+		prevLen := basket.GetSize()
 		if ok := basket.Add(ip, v.Value); !ok {
 			http.Error(w, "could not add value", http.StatusInternalServerError)
 			return
 		}
-		curLen := len(basket.Vars)
+		curLen := basket.GetSize()
 		if curLen > prevLen {
-			h.BroadcastThrow(id, strconv.Itoa(len(basket.Vars)))
+			h.BroadcastThrow(id, strconv.Itoa(curLen))
 		}
 	}
 }

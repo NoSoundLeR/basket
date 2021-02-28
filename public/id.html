@@ -8,23 +8,25 @@
 </head>
 <body>
   <h1>{{ .Title }}</h1>
-  <p>{{ .Description }}</p>
-  <p id="status">{{ if .Active }}open{{ else }} closed {{ end }}</p>
-  <p id="count">{{ .Count }}</p>
+  <p>Description: <span>{{ .Description }}</span></p>
+  <p>Status: <span id="status">{{ if .Active }}open{{ else }} closed {{ end }}</span></p>
+  <p>Count: <span id="count">{{ .Count }}</span></p>
   {{ if .Active }}
   <form id="form">
     <span id="newVarStatus"></span>
     <input type="text" id="newVar">
     <button type="submit">
-      throw
+      Throw
     </button>
   </form>
   {{ end }}
   {{ if .IsOwner }}
-  <span>End it</span>
-  <button id="end">end</button>
+  <div id="endit">
+    <span>End it</span>
+    <button id="end">End</button>
+  </div>
   {{ end }}
-  <p id="result">{{ .Result }}</p>
+  <p>Result: <span id="result">{{ .Result }}</span></p>
   <script>
     window.onload = function () {
       var conn
@@ -60,6 +62,8 @@
           method: "POST",
         })
         if (response.ok) {
+          document.getElementById("form").remove()
+          document.getElementById("endit").remove()
           console.log("this basket has been successfully closed");
         } else {
           console.log(response.status);
@@ -92,6 +96,8 @@
               break
             case "=":
               setResult(message.substring(1))
+              document.getElementById("form").remove()
+              document.getElementById("endit").remove()
               break
             default:
               console.log("wrong action");

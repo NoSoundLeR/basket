@@ -23,7 +23,7 @@ type Server struct {
 func NewServer() *Server {
 	return &Server{
 		bs: &basket.Baskets{
-			Baskets: make([]basket.Basket, 0, 50),
+			Baskets: make([]*basket.Basket, 0, 50),
 		},
 	}
 }
