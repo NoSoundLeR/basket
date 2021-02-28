@@ -10,14 +10,20 @@
   <h1>{{ .Title }}</h1>
   <p>Description: <span>{{ .Description }}</span></p>
   <p>Status: <span id="status">{{ if .Active }}open{{ else }} closed {{ end }}</span></p>
+  {{ if .Active }}
+  <div id="timediv">
+    <p>Remaining time: <span id="time"></span></p>
+  </div>
+  {{ end }}
   <p>Count: <span id="count">{{ .Count }}</span></p>
   {{ if .Active }}
   <form id="form">
-    <span id="newVarStatus"></span>
     <input type="text" id="newVar">
     <button type="submit">
       Throw
     </button>
+    <div><span id="newVarStatus"></span></div>
+    
   </form>
   {{ end }}
   {{ if .IsOwner }}
@@ -29,6 +35,31 @@
   <p>Result: <span id="result">{{ .Result }}</span></p>
   <script>
     window.onload = function () {
+      var createdAt = {{ .CreatedAt }} 
+      var timeout = {{ .Timeout }}
+      var endDate = new Date((createdAt + timeout) * 1000)
+
+      {{ if .Active }}
+      var checkTimeEvent = true
+      function checkTime() {
+        var now = Date.now()
+        var delta = (endDate - now) / 1000
+        var seconds = Math.floor(delta % 60)
+        if (seconds < 10) {
+          seconds = "0" + seconds
+        }
+        if (delta > 0 && checkTimeEvent) {
+          document.getElementById("time").innerText = `${Math.floor(delta / 60)}:${seconds}` 
+          setTimeout(() => {
+            checkTime()
+          }, 1000)
+        } else {
+          document.getElementById("timediv").remove()
+        }
+      }
+      checkTime()
+      {{ end }}
+      
       var conn
       var status = document.getElementById("status")
       var count = document.getElementById("count")
@@ -36,7 +67,7 @@
       document.getElementById("form").onsubmit = async function (e) {
         e.preventDefault()
 
-        var varNew = document.getElementById("newVar")
+        var newVar = document.getElementById("newVar")
         let response = await fetch(`/api/baskets${document.location.pathname}`,
         {
           method: "PUT",
@@ -44,12 +75,16 @@
             "Content-Type": "application/json; charset=utf-8"
           },
           body: JSON.stringify({
-            value: varNew.value
+            value: newVar.value
           })
         }
         )
         if (response.ok) {
           document.getElementById("newVarStatus").innerText = "Ok!"
+          newVar.value = ""
+          setTimeout(() => {
+            document.getElementById("newVarStatus").innerText = ""
+          }, 1500)
         } else {
           document.getElementById("newVarStatus").innerText = "Error!"
           console.log(response.status);
@@ -57,14 +92,16 @@
       }
 
       var endBtn = document.getElementById("end")
-      endBtn.onclick = async function () {
-        let response = await fetch(`/api/baskets${document.location.pathname}/close`, {
-          method: "POST",
-        })
-        if (response.ok) {
-          console.log("this basket has been successfully closed");
-        } else {
-          console.log(response.status);
+      if (endBtn) {
+        endBtn.onclick = async function () {
+          let response = await fetch(`/api/baskets${document.location.pathname}/close`, {
+            method: "POST",
+          })
+          if (response.ok) {
+            console.log("this basket has been successfully closed");
+          } else {
+            console.log(response.status);
+          }
         }
       }
 
@@ -96,6 +133,7 @@
               setResult(message.substring(1))
               document.getElementById("form").remove()
               document.getElementById("endit").remove()
+              checkTimeEvent = false
               break
             default:
               console.log("wrong action");

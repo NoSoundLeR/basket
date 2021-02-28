@@ -33,6 +33,8 @@ func BasketGet(s basket.Getter) http.HandlerFunc {
 			Description: basket.Description,
 			Result:      basket.Result,
 			Count:       len(basket.Vars),
+			CreatedAt:   basket.CreatedAt,
+			Timeout:     basket.Timeout,
 		}
 
 		t, err := template.ParseFiles("./public/id.html")

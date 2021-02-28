@@ -6,23 +6,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Create | Basket</title>
 </head>
+<style type="text/css">
+div {
+  margin: 5px;
+}
+</style>
 <body>
   <h1>Create</h1>
   <form id="form">
-    <label for="protectionLevel">Protection level</label>
-    <select name="protectionLevel" id="protectionLevel">
-      <option value="0">None</option>
-      <option value="1">IP</option>
-      <option value="2">Cookie</option>
-      <option value="3">IP + Cookie</option>
-    </select>
-    <label for="title">Title</label>
-    <input type="text" id="title">
-    <label for="description">Description</label>
-    <input type="text" id="description">
-    <label for="value">Value</label>
-    <input type="text" id="value">
-    <button type="submit">create</button>
+    <div>
+      <label for="protectionLevel">Protection level</label>
+      <select name="protectionLevel" id="protectionLevel">
+        <option value="0">None</option>
+        <option value="1">IP</option>
+        <option value="2">Cookie</option>
+        <option value="3">IP + Cookie</option>
+      </select>
+    </div>
+    <div>
+      <label for="title">Title</label>
+      <input type="text" id="title">
+    </div>
+    <div>
+      <label for="description">Description</label>
+        <input type="text" id="description">
+    </div>
+    <div>
+      <label for="value">Value</label>
+      <input type="text" id="value">
+    </div>
+    <div>
+      <label for="timeout">Timeout</label>
+      <input type="text" id="timeout" value="60">
+    </div>
+    <div>
+      <button type="submit">create</button>
+    </div>
   </form>
   <script>
     window.onload = function () {
@@ -31,6 +50,7 @@
       var title = document.getElementById("title")
       var description = document.getElementById("description")
       var value = document.getElementById("value")
+      var timeout = document.getElementById("timeout")
 
       form.onsubmit = async function (e) {
         console.log(protectionLevel.value);
@@ -45,6 +65,7 @@
             title: title.value,
             description: description.value,
             value: value.value,
+            timeout: timeout.value,
           })
         })
         if (response.ok) {

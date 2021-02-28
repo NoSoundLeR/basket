@@ -12,4 +12,6 @@ type publicInfo struct {
 	Description string
 	Result      string
 	Count       int
+	CreatedAt   int64
+	Timeout     int
 }

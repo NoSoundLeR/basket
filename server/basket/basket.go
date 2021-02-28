@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -69,6 +70,7 @@ type Basket struct {
 	Title           string
 	Description     string
 	CreatedAt       int64
+	Timeout         int
 	ClosedAt        int64
 	Vars            map[string]string
 	VarsZero        []string
@@ -77,6 +79,15 @@ type Basket struct {
 
 const symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const randomStringLen = 16
+
+// Data ...
+type Data struct {
+	ProtectionLevel string `json:"protectionLevel"`
+	Timeout         string `json:"timeout"`
+	Title           string `json:"title"`
+	Description     string `json:"description"`
+	Value           string `json:"value"`
+}
 
 func randomString() string {
 	b := make([]byte, randomStringLen)
@@ -88,26 +99,39 @@ func randomString() string {
 }
 
 // NewBasket ...
-func NewBasket(ip string, protectionLevel int, title string, description string, v string) (*Basket, error) {
-	if err := checkLength(v); err != nil {
+func NewBasket(ip string, d Data) (*Basket, error) {
+	if err := checkLength(d.Value); err != nil {
 		return nil, err
+	}
+	protectionLevel, err := strconv.Atoi(d.ProtectionLevel)
+	if err != nil {
+		return nil, errors.New("wrong protection level")
 	}
 	if err := checkProtectionLevel(protectionLevel); err != nil {
 		return nil, err
 	}
+	timeout, err := strconv.Atoi(d.Timeout)
+	if err != nil {
+		return nil, errors.New("wrong timeout value")
+	}
+	if err := checkTimeout(timeout); err != nil {
+		return nil, err
+	}
 
 	s := make([]string, 0, 2)
-	s = append(s, v)
+	s = append(s, d.Value)
+	now := time.Now().Unix()
 	return &Basket{
 		ID:              uuid.New(),
 		Secret:          randomString(),
 		ProtectionLevel: protectionLevel,
 		Active:          true,
-		Title:           title,
-		Description:     description,
-		CreatedAt:       time.Now().Unix(),
+		Title:           d.Title,
+		Description:     d.Description,
+		CreatedAt:       now,
+		Timeout:         timeout,
 		ClosedAt:        0,
-		Vars:            map[string]string{ip: v},
+		Vars:            map[string]string{ip: d.Value},
 		VarsZero:        s,
 		Result:          "",
 	}, nil
@@ -176,6 +200,13 @@ func checkLength(s string) error {
 func checkProtectionLevel(l int) error {
 	if l < 0 || l > 3 {
 		return fmt.Errorf("invalid protection level")
+	}
+	return nil
+}
+
+func checkTimeout(t int) error {
+	if t < 0 || t > 60*15 {
+		return fmt.Errorf("timeout: 0 - 15 min")
 	}
 	return nil
 }
