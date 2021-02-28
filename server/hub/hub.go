@@ -12,11 +12,8 @@ type Hub struct {
 type Message struct {
 	ID    string
 	Value []byte
+	Close bool
 }
-
-// ADDV
-// PUTV
-// CLOS
 
 // NewHub ...
 func NewHub() *Hub {
@@ -36,6 +33,7 @@ func (h *Hub) BroadcastThrow(id string, value string) {
 	h.Broadcast <- Message{
 		ID:    id,
 		Value: b,
+		Close: false,
 	}
 }
 
@@ -47,6 +45,7 @@ func (h *Hub) BroadcastResult(id string, value string) {
 	h.Broadcast <- Message{
 		ID:    id,
 		Value: b,
+		Close: true,
 	}
 }
 

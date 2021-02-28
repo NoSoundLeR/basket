@@ -5,8 +5,10 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/NoSoundLeR/basket.git/server/basket"
+	"github.com/NoSoundLeR/basket.git/server/hub"
 )
 
 type data struct {
@@ -16,8 +18,10 @@ type data struct {
 	Value           string `json:"value"`
 }
 
+const timeout = 600
+
 // APIBasketCreate ...
-func APIBasketCreate(b basket.Creator) http.HandlerFunc {
+func APIBasketCreate(h *hub.Hub, b basket.Creator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ip := strings.Split(r.RemoteAddr, ":")[0]
 		var d data
@@ -43,8 +47,19 @@ func APIBasketCreate(b basket.Creator) http.HandlerFunc {
 			Name:   basket.ID.String(),
 			Value:  basket.Secret,
 			Path:   "/",
-			MaxAge: 60,
+			MaxAge: timeout,
 		})
+
+		go func() {
+			select {
+			case <-time.After(timeout * time.Second):
+				if basket.Active {
+					basket.Close()
+					h.BroadcastResult(basket.ID.String(), basket.Result)
+				}
+			}
+		}()
+
 		if err := json.NewEncoder(w).Encode(res); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

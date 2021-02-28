@@ -62,8 +62,6 @@
           method: "POST",
         })
         if (response.ok) {
-          document.getElementById("form").remove()
-          document.getElementById("endit").remove()
           console.log("this basket has been successfully closed");
         } else {
           console.log(response.status);

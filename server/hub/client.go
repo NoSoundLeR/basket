@@ -1,7 +1,6 @@
 package hub
 
 import (
-	"bytes"
 	"log"
 	"time"
 
@@ -45,7 +44,6 @@ var (
 )
 
 // ReadPump pumps messages from the websocket connection to the hub.
-//
 // The application runs readPump in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine.
@@ -58,18 +56,14 @@ func (c *Client) ReadPump() {
 	c.Conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.Conn.SetPongHandler(func(string) error { c.Conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		_, message, err := c.Conn.ReadMessage()
+		_, _, err := c.Conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
 			}
 			break
 		}
-		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.Hub.Broadcast <- Message{
-			ID:    c.ID,
-			Value: message,
-		}
+		// message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 	}
 }
 
@@ -110,6 +104,9 @@ func (c *Client) WritePump() {
 				}
 
 				if err := w.Close(); err != nil {
+					return
+				}
+				if message.Close {
 					return
 				}
 			}
