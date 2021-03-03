@@ -41,6 +41,7 @@ func (s *Server) Run() {
 	r.Get("/", handler.BasketIndex(s.bs))
 	r.Get("/{id}", handler.BasketGet(s.bs))
 	r.Post("/api/baskets", handler.APIBasketCreate(hub, s.bs))
+	r.Get("/api/baskets/{id}", handler.APIBasketGet(s.bs))
 	r.Put("/api/baskets/{id}", handler.APIBasketThrow(hub, s.bs))
 	r.Post("/api/baskets/{id}/close", handler.APIBasketClose(hub, s.bs))
 	r.HandleFunc("/ws/{id}", handler.BasketWS(hub, s.bs))
